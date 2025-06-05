@@ -1,5 +1,5 @@
-import { validateSessionToken } from "@/auth/auth.js";
 import { Socket } from "socket.io";
+import { validateSessionToken } from "src/auth/auth.js";
 
 export async function socketMiddleware(socket: Socket, next: Function) {
   const token = socket.handshake.auth.token; // or socket.handshake.query.token
