@@ -12,7 +12,7 @@ COPY . .
 RUN npm ci
 
 # Build project
-RUN npm build
+RUN npm run build
 
 # Run the web service on container startup.
 CMD ["npm", "start"]
