@@ -3,7 +3,7 @@
 FROM node:18-alpine
 
 # Create and change to the app directory.
-WORKDIR /app
+WORKDIR /src
 
 # Copy local code to the container image.
 COPY . .
