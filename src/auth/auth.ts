@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { sha256 } from "@oslojs/crypto/sha2";
 import { encodeHexLowerCase } from "@oslojs/encoding";
 import * as table from "../db/schema.js";
-import { db } from "src/db/index.js";
+import { db } from "../db/index.js";
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24;
 
