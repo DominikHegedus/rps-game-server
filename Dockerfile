@@ -15,4 +15,4 @@ RUN npm ci
 RUN npm run build
 
 # Run the web service on container startup.
-CMD ["npm", "start"]
+CMD ["sh", "-c", "npx drizzle-kit push && npm start"]
