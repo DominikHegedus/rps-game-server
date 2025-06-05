@@ -11,5 +11,8 @@ COPY . .
 # Install project dependencies
 RUN npm ci
 
+# Build project
+RUN npm build
+
 # Run the web service on container startup.
 CMD ["npm", "start"]
