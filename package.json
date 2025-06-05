@@ -1,0 +1,38 @@
+{
+  "name": "rps-game-server",
+  "version": "1.0.0",
+  "description": "WebSocket server for Rock Paper Scissors game",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "test": "jest",
+    "db:generate": "drizzle-kit generate:pg",
+    "db:push": "drizzle-kit push:pg",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.0.1",
+    "@oslojs/crypto": "^1.0.1",
+    "@oslojs/encoding": "^1.1.0",
+    "dotenv": "^16.5.0",
+    "drizzle-orm": "^0.29.3",
+    "fastify": "^5.3.3",
+    "pg": "^8.16.0",
+    "postgres": "^3.4.3",
+    "redis": "^5.5.5",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.15.29",
+    "@types/pg": "^8.15.4",
+    "drizzle-kit": "^0.20.14",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "tsx": "^4.6.2",
+    "typescript": "^5.3.3"
+  }
+}
