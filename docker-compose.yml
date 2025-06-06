@@ -11,6 +11,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - shared
 
   redis:
     image: redis:7-alpine
@@ -18,7 +20,14 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - shared
 
 volumes:
   postgres_data:
   redis_data:
+
+networks:
+  shared:
+    external:
+      name: shared
