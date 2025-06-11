@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
-import { getIO } from "src/socket.js";
+import { getIO } from "../../socket.js";
 
 const notifyRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post("/notify-room", async (request, reply) => {
