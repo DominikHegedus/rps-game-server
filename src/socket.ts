@@ -2,8 +2,6 @@ import { Server as HTTPServer } from "http";
 import { Server as IOServer, Socket } from "socket.io";
 
 // V1 Sockets
-import createJoinRoomSocket from "./sockets/v1/join-room.socket.js";
-import createRoomMessageSocket from "./sockets/v1/room-message.socket.js";
 import createDisconnectSocket from "./sockets/v1/disconnect.socket.js";
 import createJoinQueueSocket from "./sockets/v1/join-queue.socket.js";
 import createLeaveQueueSocket from "./sockets/v1/leave-queue.socket.js";
@@ -18,12 +16,9 @@ export function createSocketServer(server: HTTPServer) {
   });
 
   io.on("connection", (socket: Socket) => {
-    console.log(`Socket connected: ${socket.id}`);
+    console.log(`[${new Date().toUTCString()}] Socket connected: ${socket.id}`);
 
     // V1 Sockets
-    // Room Sockets
-    createJoinRoomSocket(socket);
-    createRoomMessageSocket(socket);
     createDisconnectSocket(socket);
 
     // Matchmaking Queue Sockets

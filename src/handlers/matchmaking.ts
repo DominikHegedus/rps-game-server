@@ -12,7 +12,11 @@ export async function addToQueue(
   const queueKey = getQueueKey(game);
   const score = Date.now();
   await redis.zadd(queueKey, score.toString(), socket.id);
-  console.log(`[Matchmaker] ${socket.id} added to ${game} queue`);
+  console.log(
+    `[${new Date().toUTCString()}] [Matchmaker] ${
+      socket.id
+    } added to ${game} queue`
+  );
 
   await tryMatch(game, ioServer);
 }
@@ -21,7 +25,11 @@ export async function addToQueue(
 export async function removeFromQueue(socket: Socket, game: Game) {
   const queueKey = getQueueKey(game);
   await redis.zrem(queueKey, socket.id);
-  console.log(`[Matchmaker] ${socket.id} removed from ${game} queue`);
+  console.log(
+    `[${new Date().toUTCString()}] [Matchmaker] ${
+      socket.id
+    } removed from ${game} queue`
+  );
 }
 
 // Match 2 players from a game-specific queue
@@ -47,6 +55,6 @@ async function tryMatch(game: Game, ioServer: IOServer) {
   s2.emit("matchFound", { game, opponent: id1, roomId });
 
   console.log(
-    `[Matchmaker] ${id1} and ${id2} matched in ${roomId} for ${game}`
+    `[${new Date().toUTCString()}] [Matchmaker] ${id1} and ${id2} matched in ${roomId} for ${game}`
   );
 }

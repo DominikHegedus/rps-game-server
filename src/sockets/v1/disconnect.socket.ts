@@ -2,7 +2,9 @@ import { Socket } from "socket.io";
 
 const createDisconnectSocket = (socket: Socket) => {
   socket.on("disconnect", () => {
-    console.log(`Socket disconnected: ${socket.id}`);
+    console.log(
+      `[${new Date().toUTCString()}] Socket disconnected: ${socket.id}`
+    );
   });
 };
 
