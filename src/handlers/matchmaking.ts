@@ -7,8 +7,7 @@ import { getIO } from "../socket.js";
 // Add player to specific game queue
 export async function addToQueue(socket: Socket, game: Game) {
   const queueKey = getQueueKey(game);
-  const score = Date.now();
-  await redis.zadd(queueKey, score.toString(), socket.id);
+  await redis.rpush(queueKey, socket.id);
   console.log(
     `[${new Date().toUTCString()}] [Matchmaker] ${
       socket.id
@@ -21,7 +20,7 @@ export async function addToQueue(socket: Socket, game: Game) {
 // Remove from specific queue (or all if needed)
 export async function removeFromQueue(socket: Socket, game: Game) {
   const queueKey = getQueueKey(game);
-  await redis.zrem(queueKey, socket.id);
+  await redis.lrem(queueKey, 0, socket.id);
   console.log(
     `[${new Date().toUTCString()}] [Matchmaker] ${
       socket.id
@@ -32,20 +31,46 @@ export async function removeFromQueue(socket: Socket, game: Game) {
 // Match 2 players from a game-specific queue
 async function tryMatch(game: Game) {
   const queueKey = getQueueKey(game);
-  const players = await redis.zrange(queueKey, 0, 1);
 
-  if (players.length < 2) return;
+  const queueLength = await redis.llen(queueKey);
+  console.log(
+    `[${new Date().toUTCString()}] [Matchmaker] Queue length: ${queueLength} in ${game} queue`
+  );
 
-  const [id1, id2] = players;
+  if (!queueLength) {
+    return;
+  }
+
+  if (queueLength === 1) {
+    // If we only got one player, requeue them
+    const id1 = await redis.lpop(queueKey);
+    if (id1) {
+      await redis.rpush(queueKey, id1);
+
+      console.log(
+        `[${new Date().toUTCString()}] [Matchmaker] Requeued player ${id1} in ${game} queue`
+      );
+    }
+    return;
+  }
+
+  const id1 = await redis.lpop(queueKey);
+  const id2 = await redis.lpop(queueKey);
+
+  if (!id1 || !id2) {
+    return;
+  }
+
+  console.log("ID1:", id1);
+  console.log("ID2:", id2);
 
   const ioServer = getIO();
 
   const s1 = ioServer.sockets.sockets.get(id1);
   const s2 = ioServer.sockets.sockets.get(id2);
 
-  console.log(
-    `[${new Date().toUTCString()}] [Matchmaker] Sockets - s1: ${s1}, s2: ${s2}`
-  );
+  console.log("IDs:", id1, id2);
+  console.log("Sockets:", ioServer.sockets.sockets.keys());
 
   if (!s1 || !s2) return;
 
