@@ -75,7 +75,7 @@ async function tryMatch(game: Game) {
   if (!s1 || !s2) return;
 
   const roomId = `room:${game}:${id1}:${id2}`;
-  await redis.zrem(queueKey, id1, id2);
+  await redis.zrem(queueKey, [id1, id2]);
 
   s1.join(roomId);
   s2.join(roomId);
