@@ -1,11 +1,11 @@
-import { Socket, Server as IOServer } from "socket.io";
-import { addToQueue } from "src/handlers/matchmaking.js";
-import { Game } from "src/types/game.types.js";
+import { Socket } from "socket.io";
+import { addToQueue } from "../../handlers/matchmaking.js";
+import { Game } from "../../types/game.types.js";
 
-const createJoinQueueSocket = (socket: Socket, ioServer: IOServer) => {
+const createJoinQueueSocket = (socket: Socket) => {
   socket.on("joinQueue", ({ game }: { game: Game }) => {
     if (!game) return;
-    addToQueue(socket, game, ioServer);
+    addToQueue(socket, game);
   });
 };
 

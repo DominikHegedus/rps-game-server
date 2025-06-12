@@ -22,7 +22,7 @@ export function createSocketServer(server: HTTPServer) {
     createDisconnectSocket(socket);
 
     // Matchmaking Queue Sockets
-    createJoinQueueSocket(socket, io!);
+    createJoinQueueSocket(socket);
     createLeaveQueueSocket(socket);
   });
 }

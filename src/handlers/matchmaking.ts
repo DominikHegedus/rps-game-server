@@ -1,14 +1,11 @@
-import { Socket, Server as IOServer } from "socket.io";
+import { Socket } from "socket.io";
 import { redis } from "../db/redis.js";
 import { getQueueKey } from "../db/redis-schema.js";
-import { Game } from "src/types/game.types.js";
+import { Game } from "../types/game.types.js";
+import { getIO } from "../socket.js";
 
 // Add player to specific game queue
-export async function addToQueue(
-  socket: Socket,
-  game: Game,
-  ioServer: IOServer
-) {
+export async function addToQueue(socket: Socket, game: Game) {
   const queueKey = getQueueKey(game);
   const score = Date.now();
   await redis.zadd(queueKey, score.toString(), socket.id);
@@ -18,7 +15,7 @@ export async function addToQueue(
     } added to ${game} queue`
   );
 
-  await tryMatch(game, ioServer);
+  await tryMatch(game);
 }
 
 // Remove from specific queue (or all if needed)
@@ -33,15 +30,22 @@ export async function removeFromQueue(socket: Socket, game: Game) {
 }
 
 // Match 2 players from a game-specific queue
-async function tryMatch(game: Game, ioServer: IOServer) {
+async function tryMatch(game: Game) {
   const queueKey = getQueueKey(game);
   const players = await redis.zrange(queueKey, 0, 1);
+
   if (players.length < 2) return;
 
   const [id1, id2] = players;
 
+  const ioServer = getIO();
+
   const s1 = ioServer.sockets.sockets.get(id1);
   const s2 = ioServer.sockets.sockets.get(id2);
+
+  console.log(
+    `[${new Date().toUTCString()}] [Matchmaker] Sockets - s1: ${s1}, s2: ${s2}`
+  );
 
   if (!s1 || !s2) return;
 
