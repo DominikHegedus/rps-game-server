@@ -28,7 +28,6 @@ fastify.register(testConnectionRoute, { prefix: "/api/v1" });
 async function start() {
   try {
     await fastify.listen({
-      host: "::",
       port: Number(process.env.PORT) || 3000,
     });
 
