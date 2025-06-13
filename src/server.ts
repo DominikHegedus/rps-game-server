@@ -1,13 +1,13 @@
 // Fastify
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import "dotenv/config";
 
 // Handlers
 import { createSocketServer } from "./socket.js";
 
 // V1 Routes
 import testConnectionRoute from "./routes/v1/test-connection.route.js";
-import notifyRoomRoute from "./routes/v1/notify-room.route.js";
 
 const fastify = Fastify({ logger: true });
 
@@ -18,11 +18,13 @@ await fastify.register(cors, {
 
 // V1 Routes
 fastify.register(testConnectionRoute, { prefix: "/api/v1" });
-fastify.register(notifyRoomRoute, { prefix: "/api/v1" });
 
 async function start() {
   try {
-    await fastify.listen({ port: 3000 });
+    await fastify.listen({
+      host: "::",
+      port: Number(process.env.PORT) || 3000,
+    });
 
     // Initialize Socket.IO
     createSocketServer(fastify.server);
