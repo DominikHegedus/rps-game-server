@@ -8,6 +8,7 @@ import { createSocketServer } from "./socket.js";
 
 // V1 Routes
 import testConnectionRoute from "./routes/v1/test-connection.route.js";
+import { createServer } from "http";
 
 const fastify = Fastify({ logger: true });
 
@@ -27,12 +28,14 @@ fastify.register(testConnectionRoute, { prefix: "/api/v1" });
 
 async function start() {
   try {
-    await fastify.listen({
-      port: Number(process.env.PORT) || 3000,
-    });
+    const httpServer = createServer(fastify.server);
 
     // Initialize Socket.IO
-    createSocketServer(fastify.server);
+    createSocketServer(httpServer);
+
+    await httpServer.listen({
+      port: Number(process.env.PORT) || 3000,
+    });
 
     fastify.log.info("Server started");
   } catch (err) {
