@@ -5,6 +5,7 @@ import { Server as IOServer, Socket } from "socket.io";
 import createDisconnectSocket from "./sockets/v1/disconnect.socket.js";
 import createJoinQueueSocket from "./sockets/v1/join-queue.socket.js";
 import createLeaveQueueSocket from "./sockets/v1/leave-queue.socket.js";
+import createSelectActionSocket from "./sockets/v1/rock-paper-scissors/select-action.socket.js";
 
 let io: IOServer | null = null;
 
@@ -31,6 +32,9 @@ export function createSocketServer(server: HTTPServer) {
     // Matchmaking Queue Sockets
     createJoinQueueSocket(socket);
     createLeaveQueueSocket(socket);
+
+    // Rock Paper Scissors Sockets
+    createSelectActionSocket(socket);
   });
 }
 

@@ -1,6 +1,6 @@
 import { Socket } from "socket.io";
 import { redis } from "../db/redis.js";
-import { getQueueKey } from "../db/redis-schema.js";
+import { getQueueKey, getRoomKey } from "../db/redis-schema.js";
 import { Game } from "../types/game.types.js";
 import { getIO } from "../socket.js";
 
@@ -79,6 +79,14 @@ async function tryMatch(game: Game) {
 
   s1.join(roomId);
   s2.join(roomId);
+
+  await redis.hset(getRoomKey(roomId), {
+    player1: id1,
+    player2: id2,
+    game,
+    player1Action: null,
+    player2Action: null,
+  });
 
   s1.emit("matchFound", { game, opponent: id2, roomId });
   s2.emit("matchFound", { game, opponent: id1, roomId });
