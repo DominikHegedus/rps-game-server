@@ -11,8 +11,12 @@ import testConnectionRoute from "./routes/v1/test-connection.route.js";
 
 const fastify = Fastify({ logger: true });
 
+if (!process.env.CORS_ORIGIN) {
+  throw new Error("CORS_ORIGIN environment variable is not set");
+}
+
 await fastify.register(cors, {
-  origin: "*", // or set to your frontend URL like 'https://your-app.com'
+  origin: [process.env.CORS_ORIGIN], // or set to your frontend URL like 'https://your-app.com'
   methods: ["GET", "POST"],
 });
 
