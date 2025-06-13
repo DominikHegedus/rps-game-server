@@ -9,9 +9,13 @@ import createLeaveQueueSocket from "./sockets/v1/leave-queue.socket.js";
 let io: IOServer | null = null;
 
 export function createSocketServer(server: HTTPServer) {
+  if (!process.env.CORS_ORIGIN) {
+    throw new Error("CORS_ORIGIN environment variable is not set");
+  }
+
   io = new IOServer(server, {
     cors: {
-      origin: "*",
+      origin: process.env.CORS_ORIGIN,
     },
   });
 
