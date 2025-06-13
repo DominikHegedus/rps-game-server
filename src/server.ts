@@ -17,6 +17,8 @@ if (!process.env.CORS_ORIGIN) {
 
 await fastify.register(cors, {
   origin: process.env.CORS_ORIGIN, // or set to your frontend URL like 'https://your-app.com'
+  allowedHeaders: ["Access-Control-Allow-Origin"],
+  credentials: true,
   methods: ["GET", "POST"],
 });
 

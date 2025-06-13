@@ -19,6 +19,7 @@ export function createSocketServer(server: HTTPServer) {
       allowedHeaders: ["Access-Control-Allow-Origin"],
       credentials: true,
     },
+    transports: ["websocket"],
   });
 
   io.on("connection", (socket: Socket) => {
