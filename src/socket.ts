@@ -16,6 +16,7 @@ export function createSocketServer(server: HTTPServer) {
   io = new IOServer(server, {
     cors: {
       origin: process.env.CORS_ORIGIN,
+      methods: ["GET", "POST"],
       allowedHeaders: ["Access-Control-Allow-Origin"],
       credentials: true,
     },
