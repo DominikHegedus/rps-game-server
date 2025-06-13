@@ -33,11 +33,12 @@ async function start() {
     // Initialize Socket.IO
     createSocketServer(httpServer);
 
+    const port = Number(process.env.PORT) || 3000;
     await httpServer.listen({
-      port: Number(process.env.PORT) || 3000,
+      port,
     });
 
-    fastify.log.info("Server started");
+    fastify.log.info(`Server started on port ${port}`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
