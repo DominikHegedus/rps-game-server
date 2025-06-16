@@ -9,6 +9,7 @@ import createSelectActionSocket from "./sockets/v1/rock-paper-scissors/select-ac
 
 let io: IOServer | null = null;
 
+// TODO: Add contract and payload system to sockets. Contract is the name of the action, payload is the data sent to the socket.
 export function createSocketServer(server: HTTPServer) {
   if (!process.env.CORS_ORIGIN) {
     throw new Error("CORS_ORIGIN environment variable is not set");
