@@ -1,5 +1,4 @@
 import { Socket } from "socket.io";
-import { getRoomKey } from "../../../db/redis-schema.js";
 import { getIO } from "../../../socket.js";
 import { roomRedis } from "../../../db/redis.js";
 
@@ -13,9 +12,10 @@ const createSelectActionSocket = (socket: Socket) => {
       action: "rock" | "paper" | "scissors";
       roomId: string;
     }) => {
-      let opponentId = await roomRedis.hget(getRoomKey(roomId), "player1");
-      if (socket.id !== opponentId) {
-        opponentId = await roomRedis.hget(getRoomKey(roomId), "player2");
+      let opponentId = await roomRedis.hget(roomId, "player1");
+
+      if (socket.id === opponentId) {
+        opponentId = await roomRedis.hget(roomId, "player2");
       }
 
       if (!opponentId) {

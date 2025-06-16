@@ -1,8 +1,8 @@
 import { Socket } from "socket.io";
-import { getQueueKey, getRoomKey } from "../db/redis-schema.js";
+import { getQueueKey } from "../db/redis-schema.js";
 import { Game } from "../types/game.types.js";
 import { getIO } from "../socket.js";
-import { matchmakingRedis } from "../db/redis.js";
+import { matchmakingRedis, roomRedis } from "../db/redis.js";
 
 // Add player to specific game queue
 export async function addToQueue(socket: Socket, game: Game) {
@@ -27,6 +27,23 @@ export async function removeFromQueue(socket: Socket, game: Game) {
       socket.id
     } removed from ${game} queue`
   );
+}
+
+export async function removeFromAllQueues(socket: Socket) {
+  await removeFromQueue(socket, "rock-paper-scissors");
+  await removeFromQueue(socket, "duel");
+}
+
+// TODO: This is highly not optiomal
+export async function removeFromAllRooms(socket: Socket) {
+  const rooms = await roomRedis.keys("room:*");
+  for (const room of rooms) {
+    const player1 = await roomRedis.hget(room, "player1");
+    const player2 = await roomRedis.hget(room, "player1");
+    if ([player1, player2].includes(socket.id)) {
+      await roomRedis.del(room);
+    }
+  }
 }
 
 // Match 2 players from a game-specific queue
@@ -62,16 +79,10 @@ async function tryMatch(game: Game) {
     return;
   }
 
-  console.log("ID1:", id1);
-  console.log("ID2:", id2);
-
   const ioServer = getIO();
 
   const s1 = ioServer.sockets.sockets.get(id1);
   const s2 = ioServer.sockets.sockets.get(id2);
-
-  console.log("IDs:", id1, id2);
-  console.log("Sockets:", ioServer.sockets.sockets.keys());
 
   if (!s1 || !s2) return;
 
@@ -81,7 +92,7 @@ async function tryMatch(game: Game) {
   s1.join(roomId);
   s2.join(roomId);
 
-  await matchmakingRedis.hset(getRoomKey(roomId), {
+  await roomRedis.hset(roomId, {
     player1: id1,
     player2: id2,
     game,
