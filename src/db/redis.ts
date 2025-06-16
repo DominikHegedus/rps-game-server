@@ -16,3 +16,12 @@ if (!process.env.ROOM_REDIS_URL) {
 
 // Family 0 is for IPv4
 export const roomRedis = new Redis(process.env.ROOM_REDIS_URL! + "?family=0");
+
+if (!process.env.ROUND_TIMERS_REDIS_URL) {
+  throw new Error("ROUND_TIMERS_REDIS_URL environment variable is not set");
+}
+
+// Family 0 is for IPv4
+export const roundTimerRedis = new Redis(
+  process.env.ROUND_TIMERS_REDIS_URL! + "?family=0"
+);

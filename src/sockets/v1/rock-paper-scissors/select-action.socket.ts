@@ -13,8 +13,10 @@ const createSelectActionSocket = (socket: Socket) => {
       roomId: string;
     }) => {
       let opponentId = await roomRedis.hget(roomId, "player1");
+      let player = "player2";
 
       if (socket.id === opponentId) {
+        player = "player1";
         opponentId = await roomRedis.hget(roomId, "player2");
       }
 
@@ -24,6 +26,8 @@ const createSelectActionSocket = (socket: Socket) => {
 
       const ioServer = getIO();
       const opponentSocket = ioServer.sockets.sockets.get(opponentId);
+
+      await roomRedis.hset(roomId, `${player}Action`, action);
 
       opponentSocket?.emit("opponentActionSelected", {
         action,

@@ -3,6 +3,7 @@ import { getQueueKey } from "../db/redis-schema.js";
 import { Game } from "../types/game.types.js";
 import { getIO } from "../socket.js";
 import { matchmakingRedis, roomRedis } from "../db/redis.js";
+import { startRoundTimer } from "./gameplay/rock-paper-scissors.js";
 
 // Add player to specific game queue
 export async function addToQueue(socket: Socket, game: Game) {
@@ -102,6 +103,10 @@ async function tryMatch(game: Game) {
 
   s1.emit("matchFound", { game, opponent: id2, roomId });
   s2.emit("matchFound", { game, opponent: id1, roomId });
+
+  const winner = await startRoundTimer(s1, s2, roomId);
+
+  console.log("Winner:", winner);
 
   console.log(
     `[${new Date().toUTCString()}] [Matchmaker] ${id1} and ${id2} matched in ${roomId} for ${game}`
