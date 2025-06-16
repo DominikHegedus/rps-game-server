@@ -1,13 +1,14 @@
 import { Socket } from "socket.io";
-import { redis } from "../db/redis.js";
 import { getQueueKey, getRoomKey } from "../db/redis-schema.js";
 import { Game } from "../types/game.types.js";
 import { getIO } from "../socket.js";
+import { matchmakingRedis } from "../db/redis.js";
 
 // Add player to specific game queue
 export async function addToQueue(socket: Socket, game: Game) {
   const queueKey = getQueueKey(game);
-  await redis.rpush(queueKey, socket.id);
+  await matchmakingRedis.rpush(queueKey, socket.id);
+
   console.log(
     `[${new Date().toUTCString()}] [Matchmaker] ${
       socket.id
@@ -20,7 +21,7 @@ export async function addToQueue(socket: Socket, game: Game) {
 // Remove from specific queue (or all if needed)
 export async function removeFromQueue(socket: Socket, game: Game) {
   const queueKey = getQueueKey(game);
-  await redis.lrem(queueKey, 0, socket.id);
+  await matchmakingRedis.lrem(queueKey, 0, socket.id);
   console.log(
     `[${new Date().toUTCString()}] [Matchmaker] ${
       socket.id
@@ -32,7 +33,7 @@ export async function removeFromQueue(socket: Socket, game: Game) {
 async function tryMatch(game: Game) {
   const queueKey = getQueueKey(game);
 
-  const queueLength = await redis.llen(queueKey);
+  const queueLength = await matchmakingRedis.llen(queueKey);
   console.log(
     `[${new Date().toUTCString()}] [Matchmaker] Queue length: ${queueLength} in ${game} queue`
   );
@@ -43,9 +44,9 @@ async function tryMatch(game: Game) {
 
   if (queueLength === 1) {
     // If we only got one player, requeue them
-    const id1 = await redis.lpop(queueKey);
+    const id1 = await matchmakingRedis.lpop(queueKey);
     if (id1) {
-      await redis.rpush(queueKey, id1);
+      await matchmakingRedis.rpush(queueKey, id1);
 
       console.log(
         `[${new Date().toUTCString()}] [Matchmaker] Requeued player ${id1} in ${game} queue`
@@ -54,8 +55,8 @@ async function tryMatch(game: Game) {
     return;
   }
 
-  const id1 = await redis.lpop(queueKey);
-  const id2 = await redis.lpop(queueKey);
+  const id1 = await matchmakingRedis.lpop(queueKey);
+  const id2 = await matchmakingRedis.lpop(queueKey);
 
   if (!id1 || !id2) {
     return;
@@ -75,12 +76,12 @@ async function tryMatch(game: Game) {
   if (!s1 || !s2) return;
 
   const roomId = `room:${game}:${id1}:${id2}`;
-  await redis.zrem(queueKey, [id1, id2]);
+  await matchmakingRedis.zrem(queueKey, [id1, id2]);
 
   s1.join(roomId);
   s2.join(roomId);
 
-  await redis.hset(getRoomKey(roomId), {
+  await matchmakingRedis.hset(getRoomKey(roomId), {
     player1: id1,
     player2: id2,
     game,
