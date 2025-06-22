@@ -5,6 +5,18 @@ import { getIO } from "../socket.js";
 import { matchmakingRedis, roomRedis } from "../db/redis.js";
 import { startRoundTimer } from "./gameplay/rock-paper-scissors.js";
 
+export interface MatchmakingServerToClient {
+  matchFound: ({
+    game,
+    opponent,
+    roomId,
+  }: {
+    game: Game;
+    opponent: string;
+    roomId: string;
+  }) => void;
+}
+
 // Add player to specific game queue
 export async function addToQueue(socket: Socket, game: Game) {
   const queueKey = getQueueKey(game);

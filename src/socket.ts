@@ -6,6 +6,8 @@ import createDisconnectSocket from "./sockets/v1/disconnect.socket.js";
 import createJoinQueueSocket from "./sockets/v1/join-queue.socket.js";
 import createLeaveQueueSocket from "./sockets/v1/leave-queue.socket.js";
 import createSelectActionSocket from "./sockets/v1/rock-paper-scissors/select-action.socket.js";
+import { ClientToServerTypes } from "./types/client-to-server.types.js";
+import { ServerToClientTypes } from "./types/server-to-client.types.js";
 
 let io: IOServer | null = null;
 
@@ -15,7 +17,7 @@ export function createSocketServer(server: HTTPServer) {
     throw new Error("CORS_ORIGIN environment variable is not set");
   }
 
-  io = new IOServer(server, {
+  io = new IOServer<ClientToServerTypes, ServerToClientTypes>(server, {
     cors: {
       origin: process.env.CORS_ORIGIN,
       methods: ["GET", "POST"],

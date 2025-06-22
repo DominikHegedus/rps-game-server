@@ -3,6 +3,11 @@
 import { Socket } from "socket.io";
 import { roomRedis } from "../../db/redis.js";
 
+export interface RockPaperScissorsGameplayServerToClient {
+  roundEnded: (result: "won" | "lost" | "draw") => void;
+  timer: (remainingSeconds: number) => void;
+}
+
 export async function startRoundTimer(
   socket1: Socket,
   socket2: Socket,
