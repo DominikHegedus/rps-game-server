@@ -11,6 +11,9 @@ import { ServerToClientTypes } from "./types/server-to-client.types.js";
 import createAssetsLoadedSocket from "./sockets/v1/rock-paper-scissors/assets-loaded.socket.js";
 import createStartRoundTimerSocket from "./sockets/v1/rock-paper-scissors/start-round-timer.socket.js";
 import createUserReadySocket from "./sockets/v1/rock-paper-scissors/user-ready.socket.js";
+import { roundTimerRedis, roundTimerRedisSubscriber } from "./db/redis.js";
+import { createRoundExpiredRPSWorker } from "./sockets/v1/rock-paper-scissors/workers/handle-round-expire.worker.js";
+import { Queue } from "bullmq";
 
 let io: IOServer | null = null;
 
@@ -44,6 +47,9 @@ export function createSocketServer(server: HTTPServer) {
     createAssetsLoadedSocket(socket);
     createStartRoundTimerSocket(socket);
     createUserReadySocket(socket);
+
+    // Redis Subscriptions
+    createRoundTimerRedisSubscriptions();
   });
 }
 
@@ -52,4 +58,43 @@ export function getIO(): IOServer {
     throw new Error("Socket.IO not initialized");
   }
   return io;
+}
+
+function createRoundTimerRedisSubscriptions() {
+  roundTimerRedisSubscriber.subscribe(
+    "__keyevent@0__:expired",
+    (err, count) => {
+      if (err) {
+        console.error("Failed to subscribe:", err);
+        return;
+      }
+      console.log(
+        `${new Date().toUTCString()} Subscribed to expired key events.`
+      );
+    }
+  );
+
+  console.log(`${new Date().toUTCString()} Round Queue is being created!`);
+  const roundQueue = new Queue("round-expired-rps", {
+    connection: roundTimerRedis,
+  });
+
+  // TODO: attach this to fastify in the future
+  const worker = createRoundExpiredRPSWorker();
+
+  roundTimerRedisSubscriber.on("message", async (_, message) => {
+    if (message.startsWith("room:rock-paper-scissors")) {
+      console.log(
+        `${new Date().toUTCString()} Round timer expired! ${message}`
+      );
+      await roundQueue.add(
+        "handleRoundEndRPS",
+        { roomId: message },
+        {
+          removeOnComplete: true,
+          removeOnFail: true,
+        }
+      );
+    }
+  });
 }

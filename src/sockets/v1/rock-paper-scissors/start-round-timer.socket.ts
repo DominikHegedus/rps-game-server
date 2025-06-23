@@ -23,43 +23,6 @@ const createStartRoundTimerSocket = (socket: Socket) => {
       await startRoundTimer(roomId, activeRooms);
     }
   );
-
-  roundTimerRedisSubscriber.subscribe(
-    "__keyevent@0__:expired",
-    (err, count) => {
-      if (err) {
-        console.error("Failed to subscribe:", err);
-        return;
-      }
-      console.log(
-        `${new Date().toUTCString()} Subscribed to expired key events.`
-      );
-    }
-  );
-
-  console.log(`${new Date().toUTCString()} Round Queue is being created!`);
-  const roundQueue = new Queue("round-expired-rps", {
-    connection: roundTimerRedis,
-  });
-
-  // TODO: attach this to fastify in the future
-  const worker = createRoundExpiredRPSWorker();
-
-  roundTimerRedisSubscriber.on("message", async (_, message) => {
-    if (message.startsWith("room:rock-paper-scissors")) {
-      console.log(
-        `${new Date().toUTCString()} Round timer expired! ${message}`
-      );
-      await roundQueue.add(
-        "handleRoundEndRPS",
-        { roomId: message },
-        {
-          removeOnComplete: true,
-          removeOnFail: true,
-        }
-      );
-    }
-  });
 };
 
 export default createStartRoundTimerSocket;
