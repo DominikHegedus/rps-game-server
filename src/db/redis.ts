@@ -23,7 +23,15 @@ if (!process.env.ROOM_REDIS_URL) {
 }
 
 // Family 0 is for IPv4
-export const roomRedis = new Redis(process.env.ROOM_REDIS_URL! + "?family=0");
+export const roomRedis = new Redis(process.env.ROOM_REDIS_URL!, {
+  maxRetriesPerRequest: null,
+  family: 0,
+});
+
+export const roomRedisSubscriber = new Redis(process.env.ROOM_REDIS_URL!, {
+  maxRetriesPerRequest: null,
+  family: 0,
+});
 
 /**
  * ROUND TIMER
@@ -37,10 +45,6 @@ if (!process.env.ROUND_TIMERS_REDIS_URL) {
 export const roundTimerRedis = new Redis(process.env.ROUND_TIMERS_REDIS_URL!, {
   maxRetriesPerRequest: null,
   family: 0,
-});
-
-roundTimerRedis.config("SET", "notify-keyspace-events", "Ex").then(() => {
-  console.log("Keyspace notifications enabled.");
 });
 
 export const roundTimerRedisSubscriber = new Redis(

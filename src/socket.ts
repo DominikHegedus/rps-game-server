@@ -11,7 +11,12 @@ import { ServerToClientTypes } from "./types/server-to-client.types.js";
 import createAssetsLoadedSocket from "./sockets/v1/rock-paper-scissors/assets-loaded.socket.js";
 import createStartRoundTimerSocket from "./sockets/v1/rock-paper-scissors/start-round-timer.socket.js";
 import createUserReadySocket from "./sockets/v1/rock-paper-scissors/user-ready.socket.js";
-import { roundTimerRedis, roundTimerRedisSubscriber } from "./db/redis.js";
+import {
+  roomRedis,
+  roomRedisSubscriber,
+  roundTimerRedis,
+  roundTimerRedisSubscriber,
+} from "./db/redis.js";
 import { createRoundExpiredRPSWorker } from "./sockets/v1/rock-paper-scissors/workers/handle-round-expire.worker.js";
 import { Queue } from "bullmq";
 
@@ -50,6 +55,7 @@ export function createSocketServer(server: HTTPServer) {
 
     // Redis Subscriptions
     createRoundTimerRedisSubscriptions();
+    createRoomRedisSubscription();
   });
 }
 
@@ -60,8 +66,14 @@ export function getIO(): IOServer {
   return io;
 }
 
-function createRoundTimerRedisSubscriptions() {
-  roundTimerRedisSubscriber.subscribe(
+async function createRoundTimerRedisSubscriptions() {
+  await roundTimerRedis
+    .config("SET", "notify-keyspace-events", "Ex")
+    .then(() => {
+      console.log("Keyspace notifications enabled.");
+    });
+
+  await roundTimerRedisSubscriber.subscribe(
     "__keyevent@0__:expired",
     (err, count) => {
       if (err) {
@@ -96,5 +108,16 @@ function createRoundTimerRedisSubscriptions() {
         }
       );
     }
+  });
+}
+
+async function createRoomRedisSubscription() {
+  await roomRedis.config("SET", "notify-keyspace-events", "KhEAh");
+  await roomRedisSubscriber.psubscribe("__keyevent@0__:*");
+
+  roomRedisSubscriber.on("pmessage", (pattern, channel, message) => {
+    console.log(
+      `${new Date().toUTCString()} [ROOM REDIS] ${channel} -> ${message}`
+    );
   });
 }
