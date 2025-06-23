@@ -22,6 +22,18 @@ if (!process.env.ROUND_TIMERS_REDIS_URL) {
 }
 
 // Family 0 is for IPv4
-export const roundTimerRedis = new Redis(
-  process.env.ROUND_TIMERS_REDIS_URL! + "?family=0"
+export const roundTimerRedis = new Redis(process.env.ROUND_TIMERS_REDIS_URL!, {
+  maxRetriesPerRequest: null,
+  family: 0,
+});
+
+roundTimerRedis.config("SET", "notify-keyspace-events", "Ex").then(() => {
+  console.log("Keyspace notifications enabled.");
+});
+
+export const roundTimerRedisSubscriber = new Redis(
+  process.env.ROUND_TIMERS_REDIS_URL! + "?family=0",
+  {
+    maxRetriesPerRequest: null,
+  }
 );

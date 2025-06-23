@@ -1,5 +1,4 @@
 import { Socket } from "socket.io";
-import { getIO } from "../../../socket.js";
 import { roomRedis } from "../../../db/redis.js";
 
 const createSelectActionSocket = (socket: Socket) => {
@@ -24,14 +23,7 @@ const createSelectActionSocket = (socket: Socket) => {
         return;
       }
 
-      const ioServer = getIO();
-      const opponentSocket = ioServer.sockets.sockets.get(opponentId);
-
       await roomRedis.hset(roomId, `${player}Action`, action);
-
-      opponentSocket?.emit("opponentActionSelected", {
-        action,
-      });
     }
   );
 };

@@ -1,7 +1,8 @@
 // Store the game state in redis in Hash format
 
-import { Socket } from "socket.io";
 import { roomRedis } from "../../db/redis.js";
+import { roundTimerRedis } from "../../db/redis.js";
+import { getIO } from "../../socket.js";
 
 export interface RockPaperScissorsGameplayServerToClient {
   roundEnded: (result: "won" | "lost" | "draw") => void;
@@ -9,46 +10,53 @@ export interface RockPaperScissorsGameplayServerToClient {
 }
 
 export async function startRoundTimer(
-  socket1: Socket,
-  socket2: Socket,
-  roomId: string
+  roomId: string,
+  activeRooms: Set<string>
 ) {
   let roundTimer: number = 10_000;
-  const interval = setInterval(async () => {
-    roundTimer -= 1000;
 
-    console.log("Round timer:", roundTimer);
+  await roundTimerRedis.set(roomId, roundTimer);
+  await roundTimerRedis.expire(roomId, 10);
 
-    socket1.emit("timer", roundTimer / 1000);
-    socket2.emit("timer", roundTimer / 1000);
+  console.log(
+    `${new Date().toUTCString()} Round Timer has been set for ${roomId}`
+  );
 
-    if (roundTimer <= 0) {
-      const winner = await evaluateRound(roomId);
+  activeRooms.add(roomId);
+}
 
-      if (winner) {
-        if (winner === "player1") {
-          await roomRedis.hset(roomId, "winner", socket1.id);
-          socket1.emit("roundEnded", "won");
-          socket2.emit("roundEnded", "lost");
-        } else if (winner === "player2") {
-          await roomRedis.hset(roomId, "winner", socket2.id);
-          socket1.emit("roundEnded", "lost");
-          socket2.emit("roundEnded", "won");
-        } else {
-          await roomRedis.hset(roomId, "winner", "draw");
-          socket1.emit("roundEnded", "draw");
-          socket2.emit("roundEnded", "draw");
-        }
-      } else {
-        clearInterval(interval);
-        throw new Error("Something went wrong, no winner found!");
-      }
+export async function communicateResultToUsers(
+  roomId: string,
+  winner: "draw" | "player1" | "player2" | null
+) {
+  if (!winner) {
+    throw new Error(`${new Date().toUTCString()} Something went wrong!`);
+  }
 
-      clearInterval(interval);
+  const [_, game, p1, p2] = roomId.split(":");
 
-      return winner;
-    }
-  }, 1000);
+  const io = getIO();
+
+  const socket1 = io.sockets.sockets.get(p1);
+  const socket2 = io.sockets.sockets.get(p2);
+
+  if (!socket1 || !socket2) {
+    throw new Error(`${new Date().toUTCString()} Sockets could not be found!`);
+  }
+
+  if (winner === "player1") {
+    await roomRedis.hset(roomId, "winner", socket1.id);
+    socket1.emit("roundEnded", "won");
+    socket2.emit("roundEnded", "lost");
+  } else if (winner === "player2") {
+    await roomRedis.hset(roomId, "winner", socket2.id);
+    socket1.emit("roundEnded", "lost");
+    socket2.emit("roundEnded", "won");
+  } else {
+    await roomRedis.hset(roomId, "winner", "draw");
+    socket1.emit("roundEnded", "draw");
+    socket2.emit("roundEnded", "draw");
+  }
 }
 
 export async function evaluateRound(

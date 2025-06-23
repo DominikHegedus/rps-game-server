@@ -8,6 +8,9 @@ import createLeaveQueueSocket from "./sockets/v1/leave-queue.socket.js";
 import createSelectActionSocket from "./sockets/v1/rock-paper-scissors/select-action.socket.js";
 import { ClientToServerTypes } from "./types/client-to-server.types.js";
 import { ServerToClientTypes } from "./types/server-to-client.types.js";
+import createAssetsLoadedSocket from "./sockets/v1/rock-paper-scissors/assets-loaded.socket.js";
+import createStartRoundTimerSocket from "./sockets/v1/rock-paper-scissors/start-round-timer.socket.js";
+import createUserReadySocket from "./sockets/v1/rock-paper-scissors/user-ready.socket.js";
 
 let io: IOServer | null = null;
 
@@ -38,6 +41,9 @@ export function createSocketServer(server: HTTPServer) {
 
     // Rock Paper Scissors Sockets
     createSelectActionSocket(socket);
+    createAssetsLoadedSocket(socket);
+    createStartRoundTimerSocket(socket);
+    createUserReadySocket(socket);
   });
 }
 
