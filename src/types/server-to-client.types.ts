@@ -1,5 +1,5 @@
-import { RockPaperScissorsGameplayServerToClient } from "src/handlers/gameplay/rock-paper-scissors.js";
-import { MatchmakingServerToClient } from "src/handlers/matchmaking.js";
+import { RockPaperScissorsGameplayServerToClient } from "../handlers/gameplay/rock-paper-scissors.js";
+import { MatchmakingServerToClient } from "../handlers/matchmaking.js";
 
 export type ServerToClientTypes =
   | MatchmakingServerToClient

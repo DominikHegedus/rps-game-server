@@ -1,5 +1,5 @@
 import { Worker } from "bullmq";
-import { roundTimerRedis } from "src/db/redis.js";
+import { roundTimerRedis } from "../../../../db/redis.js";
 import {
   communicateResultToUsers,
   evaluateRound,

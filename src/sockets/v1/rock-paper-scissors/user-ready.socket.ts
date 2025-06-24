@@ -1,6 +1,6 @@
 import { Socket } from "socket.io";
 import { roomRedis } from "../../../db/redis.js";
-import { getIO } from "src/socket.js";
+import { getIO } from "../../../socket.js";
 
 const createUserReadySocket = (socket: Socket) => {
   socket.on(
