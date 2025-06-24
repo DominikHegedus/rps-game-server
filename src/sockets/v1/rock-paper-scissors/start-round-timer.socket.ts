@@ -10,7 +10,7 @@ const createStartRoundTimerSocket = (socket: Socket) => {
       console.log(
         `${new Date().toUTCString()} Start round timer for ${roomId}`
       );
-      await startRoundTimer(roomId, activeRooms);
+      await startRoundTimer(roomId);
     }
   );
 };

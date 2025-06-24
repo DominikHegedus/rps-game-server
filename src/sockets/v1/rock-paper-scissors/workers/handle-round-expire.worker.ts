@@ -11,8 +11,20 @@ export function createRoundExpiredRPSWorker() {
     async (job) => {
       const { roomId } = job.data;
 
-      const winner = await evaluateRound(roomId);
-      await communicateResultToUsers(roomId, winner);
+      const { winner, player1Action, player2Action } = await evaluateRound(
+        roomId
+      );
+
+      console.log(
+        `[${new Date().toUTCString()}] Winner for ${roomId}: ${winner}`
+      );
+
+      await communicateResultToUsers(
+        roomId,
+        winner,
+        player1Action,
+        player2Action
+      );
     },
     { connection: roundTimerRedis }
   );

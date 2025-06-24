@@ -1,6 +1,7 @@
 import { Socket } from "socket.io";
 import { roomRedis } from "../../../db/redis.js";
 import { getIO } from "../../../socket.js";
+import { startRoundTimer } from "../../../handlers/gameplay/rock-paper-scissors.js";
 
 const createAssetsLoadedSocket = (socket: Socket) => {
   socket.on(
@@ -38,14 +39,16 @@ const createAssetsLoadedSocket = (socket: Socket) => {
         "player2Loaded"
       );
 
-      console.log(`[##########] player1Loaded ${player1Loaded}`);
-      console.log(`[##########] player2Loaded ${player2Loaded}`);
-
       if (!!player1Loaded && !!player2Loaded) {
         const opponentSocket = getIO().sockets.sockets.get(opponentId);
 
         opponentSocket?.emit("startRound");
         socket?.emit("startRound");
+
+        console.log(
+          `${new Date().toUTCString()} Start round timer for ${roomId}!`
+        );
+        startRoundTimer(roomId);
       }
     }
   );

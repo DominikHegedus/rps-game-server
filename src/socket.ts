@@ -21,6 +21,7 @@ import { createRoundExpiredRPSWorker } from "./sockets/v1/rock-paper-scissors/wo
 import { Queue } from "bullmq";
 
 let io: IOServer | null = null;
+let isHandlerRegistered = false;
 
 // TODO: Add contract and payload system to sockets. Contract is the name of the action, payload is the data sent to the socket.
 export function createSocketServer(server: HTTPServer) {
@@ -67,13 +68,17 @@ export function getIO(): IOServer {
 }
 
 async function createRoundTimerRedisSubscriptions() {
+  if (isHandlerRegistered) {
+    return;
+  }
+
   await roundTimerRedis
     .config("SET", "notify-keyspace-events", "Ex")
     .then(() => {
       console.log("Keyspace notifications enabled.");
     });
 
-  await roundTimerRedisSubscriber.subscribe(
+  await roundTimerRedisSubscriber.psubscribe(
     "__keyevent@0__:expired",
     (err, count) => {
       if (err) {
@@ -94,7 +99,7 @@ async function createRoundTimerRedisSubscriptions() {
   // TODO: attach this to fastify in the future
   const worker = createRoundExpiredRPSWorker();
 
-  roundTimerRedisSubscriber.on("message", async (_, message) => {
+  roundTimerRedisSubscriber.on("pmessage", async (_p, _c, message) => {
     if (message.startsWith("room:rock-paper-scissors")) {
       console.log(
         `${new Date().toUTCString()} Round timer expired! ${message}`
@@ -109,6 +114,8 @@ async function createRoundTimerRedisSubscriptions() {
       );
     }
   });
+
+  isHandlerRegistered = true;
 }
 
 async function createRoomRedisSubscription() {

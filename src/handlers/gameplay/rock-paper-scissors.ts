@@ -9,10 +9,7 @@ export interface RockPaperScissorsGameplayServerToClient {
   timer: (remainingSeconds: number) => void;
 }
 
-export async function startRoundTimer(
-  roomId: string,
-  activeRooms: Set<string>
-) {
+export async function startRoundTimer(roomId: string) {
   let roundTimer: number = 10_000;
 
   await roundTimerRedis.set(roomId, roundTimer);
@@ -21,13 +18,13 @@ export async function startRoundTimer(
   console.log(
     `${new Date().toUTCString()} Round Timer has been set for ${roomId}`
   );
-
-  activeRooms.add(roomId);
 }
 
 export async function communicateResultToUsers(
   roomId: string,
-  winner: "draw" | "player1" | "player2" | null
+  winner: "draw" | "player1" | "player2" | null,
+  player1Action: string | null,
+  player2Action: string | null
 ) {
   if (!winner) {
     throw new Error(`${new Date().toUTCString()} Something went wrong!`);
@@ -46,28 +43,51 @@ export async function communicateResultToUsers(
 
   if (winner === "player1") {
     await roomRedis.hset(roomId, "winner", socket1.id);
-    socket1.emit("roundEnded", "won");
-    socket2.emit("roundEnded", "lost");
+
+    socket1.emit("roundEnded", {
+      opponentSelection: player2Action,
+      resultForUser: "won",
+    });
+    socket2.emit("roundEnded", {
+      opponentSelection: player1Action,
+      resultForUser: "lost",
+    });
   } else if (winner === "player2") {
     await roomRedis.hset(roomId, "winner", socket2.id);
-    socket1.emit("roundEnded", "lost");
-    socket2.emit("roundEnded", "won");
+
+    socket1.emit("roundEnded", {
+      opponentSelection: player2Action,
+      resultForUser: "lost",
+    });
+    socket2.emit("roundEnded", {
+      opponentSelection: player1Action,
+      resultForUser: "won",
+    });
   } else {
     await roomRedis.hset(roomId, "winner", "draw");
-    socket1.emit("roundEnded", "draw");
-    socket2.emit("roundEnded", "draw");
+
+    socket1.emit("roundEnded", {
+      opponentSelection: player2Action,
+      resultForUser: "draw",
+    });
+    socket2.emit("roundEnded", {
+      opponentSelection: player1Action,
+      resultForUser: "draw",
+    });
   }
 }
 
-export async function evaluateRound(
-  roomId: string
-): Promise<"draw" | "player1" | "player2" | null> {
+export async function evaluateRound(roomId: string): Promise<{
+  winner: "draw" | "player1" | "player2" | null;
+  player1Action: string | null;
+  player2Action: string | null;
+}> {
   const player1Action = await roomRedis.hget(roomId, "player1Action");
   const player2Action = await roomRedis.hget(roomId, "player2Action");
 
   const winner = _evaluateRound(player1Action, player2Action);
 
-  return winner;
+  return { winner, player1Action, player2Action };
 }
 
 function _evaluateRound(
