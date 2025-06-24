@@ -1,7 +1,7 @@
 import { Socket } from "socket.io";
 import { roomRedis } from "../../../db/redis.js";
 import { getIO } from "../../../socket.js";
-import { stopRoundTimer } from "src/handlers/gameplay/rock-paper-scissors.js";
+import { stopRoundTimer } from "../../../handlers/gameplay/rock-paper-scissors.js";
 
 const createUserReadySocket = (socket: Socket) => {
   socket.on(
