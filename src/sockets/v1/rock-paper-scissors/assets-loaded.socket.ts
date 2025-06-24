@@ -17,7 +17,6 @@ const createAssetsLoadedSocket = (socket: Socket) => {
       let [player1, player1Loaded, player2Loaded] = await roomRedis.hmget(
         roomId,
         "player1",
-        "player2",
         "player1Loaded",
         "player2Loaded"
       );

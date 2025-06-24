@@ -16,7 +16,15 @@ export async function startRoundTimer(roomId: string) {
   await roundTimerRedis.expire(roomId, 10);
 
   console.log(
-    `${new Date().toUTCString()} Round Timer has been set for ${roomId}`
+    `${new Date().toUTCString()} Round Timer has been set for ${roomId}!`
+  );
+}
+
+export async function stopRoundTimer(roomId: string) {
+  await roundTimerRedis.expire(roomId, 1);
+
+  console.log(
+    `${new Date().toUTCString()} Making round timer expired for ${roomId}!`
   );
 }
 
