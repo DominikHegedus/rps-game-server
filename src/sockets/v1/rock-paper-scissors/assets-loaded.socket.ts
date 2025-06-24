@@ -13,7 +13,7 @@ const createAssetsLoadedSocket = (socket: Socket) => {
       roomId: string;
       opponentId: string;
     }) => {
-      const [player1, player1Loaded, player2Loaded] = await roomRedis.hmget(
+      let [player1, player1Loaded, player2Loaded] = await roomRedis.hmget(
         roomId,
         "player1",
         "player2",
@@ -26,16 +26,22 @@ const createAssetsLoadedSocket = (socket: Socket) => {
         player = "player2";
       }
 
-      await roomRedis.hset(roomId, { [`${player}Loaded`]: true });
+      await roomRedis.hset(roomId, { [`${player}Loaded`]: "true" });
 
       if (!opponentId) {
         return;
       }
 
-      if (
-        (player === "player1" && player1Loaded) ||
-        (player === "player2" && player2Loaded)
-      ) {
+      [player1Loaded, player2Loaded] = await roomRedis.hmget(
+        roomId,
+        "player1Loaded",
+        "player2Loaded"
+      );
+
+      console.log(`[##########] player1Loaded ${player1Loaded}`);
+      console.log(`[##########] player2Loaded ${player2Loaded}`);
+
+      if (!!player1Loaded && !!player2Loaded) {
         const opponentSocket = getIO().sockets.sockets.get(opponentId);
 
         opponentSocket?.emit("startRound");

@@ -1,15 +1,5 @@
 import { Socket } from "socket.io";
-import {
-  evaluateRound,
-  startRoundTimer,
-} from "../../../handlers/gameplay/rock-paper-scissors.js";
-import { getIO } from "../../../socket.js";
-import {
-  roundTimerRedis,
-  roundTimerRedisSubscriber,
-} from "../../../db/redis.js";
-import { Queue } from "bullmq";
-import { createRoundExpiredRPSWorker } from "./workers/handle-round-expire.worker.js";
+import { startRoundTimer } from "../../../handlers/gameplay/rock-paper-scissors.js";
 
 const createStartRoundTimerSocket = (socket: Socket) => {
   const activeRooms = new Set<string>([]);

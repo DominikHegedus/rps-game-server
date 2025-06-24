@@ -110,10 +110,10 @@ async function tryMatch(game: Game) {
     player2: id2,
     player1Action: null,
     player2Action: null,
-    player1Loaded: false,
-    player2Loaded: false,
-    player1Ready: false,
-    player2Ready: false,
+    player1Loaded: "",
+    player2Loaded: "",
+    player1Ready: "",
+    player2Ready: "",
   });
 
   s1.emit("matchFound", { game, opponent: id2, roomId });

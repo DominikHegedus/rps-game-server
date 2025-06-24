@@ -116,8 +116,8 @@ async function createRoomRedisSubscription() {
   await roomRedisSubscriber.psubscribe("__keyevent@0__:*");
 
   roomRedisSubscriber.on("pmessage", (pattern, channel, message) => {
-    console.log(
-      `${new Date().toUTCString()} [ROOM REDIS] ${channel} -> ${message}`
-    );
+    // console.log(
+    //   `${new Date().toUTCString()} [ROOM REDIS] ${channel} -> ${message}`
+    // );
   });
 }
