@@ -9,7 +9,6 @@ import createSelectActionSocket from "./sockets/v1/rock-paper-scissors/select-ac
 import { ClientToServerTypes } from "./types/client-to-server.types.js";
 import { ServerToClientTypes } from "./types/server-to-client.types.js";
 import createAssetsLoadedSocket from "./sockets/v1/rock-paper-scissors/assets-loaded.socket.js";
-import createStartRoundTimerSocket from "./sockets/v1/rock-paper-scissors/start-round-timer.socket.js";
 import createUserReadySocket from "./sockets/v1/rock-paper-scissors/user-ready.socket.js";
 import {
   roomRedis,
@@ -51,7 +50,6 @@ export function createSocketServer(server: HTTPServer) {
     // Rock Paper Scissors Sockets
     createSelectActionSocket(socket);
     createAssetsLoadedSocket(socket);
-    createStartRoundTimerSocket(socket);
     createUserReadySocket(socket);
 
     // Redis Subscriptions
