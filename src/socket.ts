@@ -16,9 +16,9 @@ import {
   roundTimerRedis,
   roundTimerRedisSubscriber,
 } from "./db/redis.js";
-import { createRoundExpiredRPSWorker } from "./sockets/v1/rock-paper-scissors/workers/handle-round-expire.worker.js";
 import { Queue } from "bullmq";
 import { logger } from "./utils/logger.js";
+import { roundExpiredRPSWorker } from "./sockets/v1/rock-paper-scissors/workers/handle-round-expire.worker.js";
 
 let io: IOServer | null = null;
 let isHandlerRegistered = false;
@@ -125,9 +125,9 @@ async function createRoundTimerRedisSubscriptions() {
   // TODO: attach this to fastify in the future
   // Create and start the worker (singleton pattern handled in worker file)
   try {
-    const worker = createRoundExpiredRPSWorker();
-
-    // Worker starts automatically when created, no need to call run()
+    if (!roundExpiredRPSWorker.isRunning()) {
+      roundExpiredRPSWorker.run();
+    }
     logger("Round expired RPS worker created and ready!");
   } catch (error) {
     logger(`Error with worker: ${error}`);

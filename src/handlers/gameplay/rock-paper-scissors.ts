@@ -36,7 +36,8 @@ export async function communicateResultToUsers(
   );
 
   if (!winner) {
-    throw new Error(`${new Date().toUTCString()} Something went wrong!`);
+    logger(`Warning: No winner determined for roomId: ${roomId}`);
+    return; // Don't throw, just return gracefully
   }
 
   const [_, game, p1, p2] = roomId.split(":");
@@ -54,46 +55,68 @@ export async function communicateResultToUsers(
     }`
   );
 
+  // Don't throw if sockets are not found, just log and continue
   if (!socket1 || !socket2) {
-    throw new Error(`${new Date().toUTCString()} Sockets could not be found!`);
+    logger(
+      `Warning: Sockets not found for roomId: ${roomId}. Socket1: ${!!socket1}, Socket2: ${!!socket2}`
+    );
+    // Still update the winner in Redis even if sockets are disconnected
+    try {
+      if (winner === "player1") {
+        await roomRedis.hset(roomId, "winner", p1);
+      } else if (winner === "player2") {
+        await roomRedis.hset(roomId, "winner", p2);
+      } else {
+        await roomRedis.hset(roomId, "winner", "draw");
+      }
+      logger(`Updated winner in Redis for roomId: ${roomId}`);
+    } catch (redisError) {
+      logger(`Error updating winner in Redis: ${redisError}`);
+    }
+    return;
   }
 
-  if (winner === "player1") {
-    await roomRedis.hset(roomId, "winner", socket1.id);
+  try {
+    if (winner === "player1") {
+      await roomRedis.hset(roomId, "winner", socket1.id);
 
-    socket1.emit("roundEnded", {
-      opponentSelection: player2Action,
-      resultForUser: "won",
-    });
-    socket2.emit("roundEnded", {
-      opponentSelection: player1Action,
-      resultForUser: "lost",
-    });
-  } else if (winner === "player2") {
-    await roomRedis.hset(roomId, "winner", socket2.id);
+      socket1.emit("roundEnded", {
+        opponentSelection: player2Action,
+        resultForUser: "won",
+      });
+      socket2.emit("roundEnded", {
+        opponentSelection: player1Action,
+        resultForUser: "lost",
+      });
+    } else if (winner === "player2") {
+      await roomRedis.hset(roomId, "winner", socket2.id);
 
-    socket1.emit("roundEnded", {
-      opponentSelection: player2Action,
-      resultForUser: "lost",
-    });
-    socket2.emit("roundEnded", {
-      opponentSelection: player1Action,
-      resultForUser: "won",
-    });
-  } else {
-    await roomRedis.hset(roomId, "winner", "draw");
+      socket1.emit("roundEnded", {
+        opponentSelection: player2Action,
+        resultForUser: "lost",
+      });
+      socket2.emit("roundEnded", {
+        opponentSelection: player1Action,
+        resultForUser: "won",
+      });
+    } else {
+      await roomRedis.hset(roomId, "winner", "draw");
 
-    socket1.emit("roundEnded", {
-      opponentSelection: player2Action,
-      resultForUser: "draw",
-    });
-    socket2.emit("roundEnded", {
-      opponentSelection: player1Action,
-      resultForUser: "draw",
-    });
+      socket1.emit("roundEnded", {
+        opponentSelection: player2Action,
+        resultForUser: "draw",
+      });
+      socket2.emit("roundEnded", {
+        opponentSelection: player1Action,
+        resultForUser: "draw",
+      });
+    }
+
+    logger(`Successfully emitted roundEnded events for roomId: ${roomId}`);
+  } catch (error) {
+    logger(`Error emitting roundEnded events for roomId: ${roomId}: ${error}`);
+    // Don't re-throw, just log the error
   }
-
-  logger(`Successfully emitted roundEnded events for roomId: ${roomId}`);
 }
 
 export async function evaluateRound(roomId: string): Promise<{
