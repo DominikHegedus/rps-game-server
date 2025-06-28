@@ -2,6 +2,7 @@ import { Socket } from "socket.io";
 import { roomRedis } from "../../../db/redis.js";
 import { getIO } from "../../../socket.js";
 import { stopRoundTimer } from "../../../handlers/gameplay/rock-paper-scissors.js";
+import { logger } from "../../../utils/logger.js";
 
 const createUserReadySocket = (socket: Socket) => {
   socket.on(
@@ -39,9 +40,7 @@ const createUserReadySocket = (socket: Socket) => {
         opponentSocket?.emit("bothReady");
         socket?.emit("bothReady");
 
-        console.log(
-          `${new Date().toUTCString()} Both Users are ready in ${roomId}!`
-        );
+        logger(`Both Users are ready in ${roomId}!`);
       }
     }
   );

@@ -3,6 +3,7 @@ import { getQueueKey } from "../db/redis-schema.js";
 import { Game } from "../types/game.types.js";
 import { getIO } from "../socket.js";
 import { matchmakingRedis, roomRedis } from "../db/redis.js";
+import { logger } from "../utils/logger.js";
 
 export interface MatchmakingServerToClient {
   matchFound: ({
@@ -21,11 +22,7 @@ export async function addToQueue(socket: Socket, game: Game) {
   const queueKey = getQueueKey(game);
   await matchmakingRedis.rpush(queueKey, socket.id);
 
-  console.log(
-    `[${new Date().toUTCString()}] [Matchmaker] ${
-      socket.id
-    } added to ${game} queue`
-  );
+  logger(`[Matchmaker] ${socket.id} added to ${game} queue`);
 
   await tryMatch(game);
 }
@@ -34,11 +31,7 @@ export async function addToQueue(socket: Socket, game: Game) {
 export async function removeFromQueue(socket: Socket, game: Game) {
   const queueKey = getQueueKey(game);
   await matchmakingRedis.lrem(queueKey, 0, socket.id);
-  console.log(
-    `[${new Date().toUTCString()}] [Matchmaker] ${
-      socket.id
-    } removed from ${game} queue`
-  );
+  logger(`[Matchmaker] ${socket.id} removed from ${game} queue`);
 }
 
 export async function removeFromAllQueues(socket: Socket) {
@@ -63,9 +56,7 @@ async function tryMatch(game: Game) {
   const queueKey = getQueueKey(game);
 
   const queueLength = await matchmakingRedis.llen(queueKey);
-  console.log(
-    `[${new Date().toUTCString()}] [Matchmaker] Queue length: ${queueLength} in ${game} queue`
-  );
+  logger(`[Matchmaker] Queue length: ${queueLength} in ${game} queue`);
 
   if (!queueLength) {
     return;
@@ -77,9 +68,7 @@ async function tryMatch(game: Game) {
     if (id1) {
       await matchmakingRedis.rpush(queueKey, id1);
 
-      console.log(
-        `[${new Date().toUTCString()}] [Matchmaker] Requeued player ${id1} in ${game} queue`
-      );
+      logger(`[Matchmaker] Requeued player ${id1} in ${game} queue`);
     }
     return;
   }
@@ -119,7 +108,5 @@ async function tryMatch(game: Game) {
   s1.emit("matchFound", { game, opponent: id2, roomId });
   s2.emit("matchFound", { game, opponent: id1, roomId });
 
-  console.log(
-    `[${new Date().toUTCString()}] [Matchmaker] ${id1} and ${id2} matched in ${roomId} for ${game}`
-  );
+  logger(`[Matchmaker] ${id1} and ${id2} matched in ${roomId} for ${game}`);
 }

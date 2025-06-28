@@ -3,6 +3,7 @@ import {
   removeFromAllQueues,
   removeFromAllRooms,
 } from "../../handlers/matchmaking.js";
+import { logger } from "../../utils/logger.js";
 
 const createDisconnectSocket = (socket: Socket) => {
   socket.on("disconnect", () => {
@@ -10,9 +11,7 @@ const createDisconnectSocket = (socket: Socket) => {
 
     removeFromAllRooms(socket);
 
-    console.log(
-      `[${new Date().toUTCString()}] Socket disconnected: ${socket.id}`
-    );
+    logger(`Socket disconnected: ${socket.id}`);
   });
 };
 

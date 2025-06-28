@@ -3,6 +3,7 @@
 import { roomRedis } from "../../db/redis.js";
 import { roundTimerRedis } from "../../db/redis.js";
 import { getIO } from "../../socket.js";
+import { logger } from "../../utils/logger.js";
 
 export interface RockPaperScissorsGameplayServerToClient {
   roundEnded: (result: "won" | "lost" | "draw") => void;
@@ -15,17 +16,13 @@ export async function startRoundTimer(roomId: string) {
   await roundTimerRedis.set(roomId, roundTimer);
   await roundTimerRedis.expire(roomId, 10);
 
-  console.log(
-    `${new Date().toUTCString()} Round Timer has been set for ${roomId}!`
-  );
+  logger(`Round Timer has been set for ${roomId}!`);
 }
 
 export async function stopRoundTimer(roomId: string) {
   await roundTimerRedis.expire(roomId, 1);
 
-  console.log(
-    `${new Date().toUTCString()} Making round timer expired for ${roomId}!`
-  );
+  logger(`Making round timer expired for ${roomId}!`);
 }
 
 export async function communicateResultToUsers(
@@ -34,8 +31,8 @@ export async function communicateResultToUsers(
   player1Action: string | null,
   player2Action: string | null
 ) {
-  console.log(
-    `[${new Date().toUTCString()}] Starting communicateResultToUsers for roomId: ${roomId}, winner: ${winner}`
+  logger(
+    `Starting communicateResultToUsers for roomId: ${roomId}, winner: ${winner}`
   );
 
   if (!winner) {
@@ -44,19 +41,17 @@ export async function communicateResultToUsers(
 
   const [_, game, p1, p2] = roomId.split(":");
 
-  console.log(
-    `[${new Date().toUTCString()}] Parsed roomId - game: ${game}, p1: ${p1}, p2: ${p2}`
-  );
+  logger(`Parsed roomId - game: ${game}, p1: ${p1}, p2: ${p2}`);
 
   const io = getIO();
 
   const socket1 = io.sockets.sockets.get(p1);
   const socket2 = io.sockets.sockets.get(p2);
 
-  console.log(
-    `[${new Date().toUTCString()}] Retrieved sockets - socket1: ${
-      socket1?.id || "null"
-    }, socket2: ${socket2?.id || "null"}`
+  logger(
+    `Retrieved sockets - socket1: ${socket1?.id || "null"}, socket2: ${
+      socket2?.id || "null"
+    }`
   );
 
   if (!socket1 || !socket2) {
@@ -98,9 +93,7 @@ export async function communicateResultToUsers(
     });
   }
 
-  console.log(
-    `[${new Date().toUTCString()}] Successfully emitted roundEnded events for roomId: ${roomId}`
-  );
+  logger(`Successfully emitted roundEnded events for roomId: ${roomId}`);
 }
 
 export async function evaluateRound(roomId: string): Promise<{
@@ -108,20 +101,18 @@ export async function evaluateRound(roomId: string): Promise<{
   player1Action: string | null;
   player2Action: string | null;
 }> {
-  console.log(
-    `[${new Date().toUTCString()}] Evaluating round for roomId: ${roomId}`
-  );
+  logger(`Evaluating round for roomId: ${roomId}`);
 
   const player1Action = await roomRedis.hget(roomId, "player1Action");
   const player2Action = await roomRedis.hget(roomId, "player2Action");
 
-  console.log(
-    `[${new Date().toUTCString()}] Retrieved actions - player1Action: ${player1Action}, player2Action: ${player2Action}`
+  logger(
+    `Retrieved actions - player1Action: ${player1Action}, player2Action: ${player2Action}`
   );
 
   const winner = _evaluateRound(player1Action, player2Action);
 
-  console.log(`[${new Date().toUTCString()}] Evaluated winner: ${winner}`);
+  logger(`Evaluated winner: ${winner}`);
 
   return { winner, player1Action, player2Action };
 }

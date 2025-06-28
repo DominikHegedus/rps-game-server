@@ -18,6 +18,7 @@ import {
 } from "./db/redis.js";
 import { createRoundExpiredRPSWorker } from "./sockets/v1/rock-paper-scissors/workers/handle-round-expire.worker.js";
 import { Queue } from "bullmq";
+import { logger } from "./utils/logger.js";
 
 let io: IOServer | null = null;
 let isHandlerRegistered = false;
@@ -40,7 +41,7 @@ export function createSocketServer(server: HTTPServer) {
   });
 
   io.on("connection", (socket: Socket) => {
-    console.log(`[${new Date().toUTCString()}] Socket connected: ${socket.id}`);
+    logger(`Socket connected: ${socket.id}`);
 
     // V1 Sockets
     createDisconnectSocket(socket);
@@ -77,23 +78,21 @@ async function createRoundTimerRedisSubscriptions() {
     await roundTimerRedis
       .config("SET", "notify-keyspace-events", "Ex")
       .then(() => {
-        console.log("Keyspace notifications enabled.");
+        logger("Keyspace notifications enabled.");
       });
 
     await roundTimerRedisSubscriber.psubscribe(
       "__keyevent@0__:expired",
       (err, count) => {
         if (err) {
-          console.error("Failed to subscribe:", err);
+          logger(`Failed to subscribe: ${err}`);
           return;
         }
-        console.log(
-          `${new Date().toUTCString()} Subscribed to expired key events.`
-        );
+        logger("Subscribed to expired key events.");
       }
     );
 
-    console.log(`${new Date().toUTCString()} Round Queue is being created!`);
+    logger("Round Queue is being created!");
     roundQueue = new Queue("round-expired-rps", {
       connection: roundTimerRedis,
     });
@@ -101,9 +100,7 @@ async function createRoundTimerRedisSubscriptions() {
     // Set up the event listener only once
     roundTimerRedisSubscriber.on("pmessage", async (_p, _c, message) => {
       if (message.startsWith("room:rock-paper-scissors")) {
-        console.log(
-          `${new Date().toUTCString()} Round timer expired! ${message}`
-        );
+        logger(`Round timer expired! ${message}`);
 
         try {
           const job = await roundQueue.add(
@@ -114,22 +111,15 @@ async function createRoundTimerRedisSubscriptions() {
               removeOnFail: true,
             }
           );
-          console.log(
-            `${new Date().toUTCString()} Job added to queue with ID: ${job.id}`
-          );
+          logger(`Job added to queue with ID: ${job.id}`);
         } catch (error) {
-          console.error(
-            `${new Date().toUTCString()} Failed to add job to queue:`,
-            error
-          );
+          logger(`Failed to add job to queue: ${error}`);
         }
       }
     });
 
     isSubscriptionSetUp = true;
-    console.log(
-      `${new Date().toUTCString()} Redis subscription event listener set up`
-    );
+    logger("Redis subscription event listener set up");
   }
 
   // TODO: attach this to fastify in the future
@@ -138,11 +128,9 @@ async function createRoundTimerRedisSubscriptions() {
     const worker = createRoundExpiredRPSWorker();
 
     // Worker starts automatically when created, no need to call run()
-    console.log(
-      `${new Date().toUTCString()} Round expired RPS worker created and ready!`
-    );
+    logger("Round expired RPS worker created and ready!");
   } catch (error) {
-    console.error(`${new Date().toUTCString()} Error with worker:`, error);
+    logger(`Error with worker: ${error}`);
   }
 
   isHandlerRegistered = true;
@@ -153,8 +141,6 @@ async function createRoomRedisSubscription() {
   await roomRedisSubscriber.psubscribe("__keyevent@0__:*");
 
   roomRedisSubscriber.on("pmessage", (pattern, channel, message) => {
-    // console.log(
-    //   `${new Date().toUTCString()} [ROOM REDIS] ${channel} -> ${message}`
-    // );
+    // logger(`[ROOM REDIS] ${channel} -> ${message}`);
   });
 }

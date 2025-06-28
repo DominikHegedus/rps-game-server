@@ -2,6 +2,7 @@ import { Socket } from "socket.io";
 import { roomRedis } from "../../../db/redis.js";
 import { getIO } from "../../../socket.js";
 import { startRoundTimer } from "../../../handlers/gameplay/rock-paper-scissors.js";
+import { logger } from "../../../utils/logger.js";
 
 const createAssetsLoadedSocket = (socket: Socket) => {
   socket.on(
@@ -44,9 +45,7 @@ const createAssetsLoadedSocket = (socket: Socket) => {
         opponentSocket?.emit("startRound");
         socket?.emit("startRound");
 
-        console.log(
-          `${new Date().toUTCString()} Start round timer for ${roomId}!`
-        );
+        logger(`Start round timer for ${roomId}!`);
         startRoundTimer(roomId);
       }
     }
