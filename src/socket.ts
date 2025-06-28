@@ -21,6 +21,8 @@ import { Queue } from "bullmq";
 
 let io: IOServer | null = null;
 let isHandlerRegistered = false;
+let isSubscriptionSetUp = false;
+let roundQueue: any = null;
 
 // TODO: Add contract and payload system to sockets. Contract is the name of the action, payload is the data sent to the socket.
 export function createSocketServer(server: HTTPServer) {
@@ -70,48 +72,78 @@ async function createRoundTimerRedisSubscriptions() {
     return;
   }
 
-  await roundTimerRedis
-    .config("SET", "notify-keyspace-events", "Ex")
-    .then(() => {
-      console.log("Keyspace notifications enabled.");
+  // Only set up Redis configuration and subscription once
+  if (!isSubscriptionSetUp) {
+    await roundTimerRedis
+      .config("SET", "notify-keyspace-events", "Ex")
+      .then(() => {
+        console.log("Keyspace notifications enabled.");
+      });
+
+    await roundTimerRedisSubscriber.psubscribe(
+      "__keyevent@0__:expired",
+      (err, count) => {
+        if (err) {
+          console.error("Failed to subscribe:", err);
+          return;
+        }
+        console.log(
+          `${new Date().toUTCString()} Subscribed to expired key events.`
+        );
+      }
+    );
+
+    console.log(`${new Date().toUTCString()} Round Queue is being created!`);
+    roundQueue = new Queue("round-expired-rps", {
+      connection: roundTimerRedis,
     });
 
-  await roundTimerRedisSubscriber.psubscribe(
-    "__keyevent@0__:expired",
-    (err, count) => {
-      if (err) {
-        console.error("Failed to subscribe:", err);
-        return;
-      }
-      console.log(
-        `${new Date().toUTCString()} Subscribed to expired key events.`
-      );
-    }
-  );
+    // Set up the event listener only once
+    roundTimerRedisSubscriber.on("pmessage", async (_p, _c, message) => {
+      if (message.startsWith("room:rock-paper-scissors")) {
+        console.log(
+          `${new Date().toUTCString()} Round timer expired! ${message}`
+        );
 
-  console.log(`${new Date().toUTCString()} Round Queue is being created!`);
-  const roundQueue = new Queue("round-expired-rps", {
-    connection: roundTimerRedis,
-  });
+        try {
+          const job = await roundQueue.add(
+            "handleRoundEndRPS",
+            { roomId: message },
+            {
+              removeOnComplete: true,
+              removeOnFail: true,
+            }
+          );
+          console.log(
+            `${new Date().toUTCString()} Job added to queue with ID: ${job.id}`
+          );
+        } catch (error) {
+          console.error(
+            `${new Date().toUTCString()} Failed to add job to queue:`,
+            error
+          );
+        }
+      }
+    });
+
+    isSubscriptionSetUp = true;
+    console.log(
+      `${new Date().toUTCString()} Redis subscription event listener set up`
+    );
+  }
 
   // TODO: attach this to fastify in the future
-  const worker = createRoundExpiredRPSWorker();
+  // Create and start the worker (singleton pattern handled in worker file)
+  try {
+    const worker = createRoundExpiredRPSWorker();
 
-  roundTimerRedisSubscriber.on("pmessage", async (_p, _c, message) => {
-    if (message.startsWith("room:rock-paper-scissors")) {
-      console.log(
-        `${new Date().toUTCString()} Round timer expired! ${message}`
-      );
-      await roundQueue.add(
-        "handleRoundEndRPS",
-        { roomId: message },
-        {
-          removeOnComplete: true,
-          removeOnFail: true,
-        }
-      );
-    }
-  });
+    // Worker starts automatically when created, no need to call run()
+    console.log(
+      `${new Date().toUTCString()} Round expired RPS worker created and ready!`
+    );
+  } catch (error) {
+    console.error(`${new Date().toUTCString()} Error with worker:`, error);
+  }
 
   isHandlerRegistered = true;
 }

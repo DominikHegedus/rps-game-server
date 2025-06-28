@@ -34,16 +34,30 @@ export async function communicateResultToUsers(
   player1Action: string | null,
   player2Action: string | null
 ) {
+  console.log(
+    `[${new Date().toUTCString()}] Starting communicateResultToUsers for roomId: ${roomId}, winner: ${winner}`
+  );
+
   if (!winner) {
     throw new Error(`${new Date().toUTCString()} Something went wrong!`);
   }
 
   const [_, game, p1, p2] = roomId.split(":");
 
+  console.log(
+    `[${new Date().toUTCString()}] Parsed roomId - game: ${game}, p1: ${p1}, p2: ${p2}`
+  );
+
   const io = getIO();
 
   const socket1 = io.sockets.sockets.get(p1);
   const socket2 = io.sockets.sockets.get(p2);
+
+  console.log(
+    `[${new Date().toUTCString()}] Retrieved sockets - socket1: ${
+      socket1?.id || "null"
+    }, socket2: ${socket2?.id || "null"}`
+  );
 
   if (!socket1 || !socket2) {
     throw new Error(`${new Date().toUTCString()} Sockets could not be found!`);
@@ -83,6 +97,10 @@ export async function communicateResultToUsers(
       resultForUser: "draw",
     });
   }
+
+  console.log(
+    `[${new Date().toUTCString()}] Successfully emitted roundEnded events for roomId: ${roomId}`
+  );
 }
 
 export async function evaluateRound(roomId: string): Promise<{
@@ -90,10 +108,20 @@ export async function evaluateRound(roomId: string): Promise<{
   player1Action: string | null;
   player2Action: string | null;
 }> {
+  console.log(
+    `[${new Date().toUTCString()}] Evaluating round for roomId: ${roomId}`
+  );
+
   const player1Action = await roomRedis.hget(roomId, "player1Action");
   const player2Action = await roomRedis.hget(roomId, "player2Action");
 
+  console.log(
+    `[${new Date().toUTCString()}] Retrieved actions - player1Action: ${player1Action}, player2Action: ${player2Action}`
+  );
+
   const winner = _evaluateRound(player1Action, player2Action);
+
+  console.log(`[${new Date().toUTCString()}] Evaluated winner: ${winner}`);
 
   return { winner, player1Action, player2Action };
 }
